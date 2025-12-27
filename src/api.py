@@ -31,10 +31,7 @@ logging.basicConfig(filename=log_file, level=logging.INFO, format="%(message)s")
 # ----------------------------
 # Load latest trained model
 # ----------------------------
-model_files = [
-    f for f in os.listdir(OUTPUT_DIR)
-    if f.startswith("final_model_") and f.endswith(".pkl")
-]
+model_files = [f for f in os.listdir(OUTPUT_DIR) if f.startswith("final_model_") and f.endswith(".pkl")]
 
 if not model_files:
     raise FileNotFoundError(f"No trained model found in {OUTPUT_DIR}")
@@ -48,8 +45,19 @@ with open(model_path, "rb") as f:
 # Features
 # ----------------------------
 FEATURES = [
-    "age", "sex", "cp", "trestbps", "chol", "fbs",
-    "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal",
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
 ]
 
 # ----------------------------
@@ -62,6 +70,7 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 # ----------------------------
 instrumentator = Instrumentator(should_group_status_codes=False, should_ignore_untemplated=True)
 instrumentator.instrument(app).expose(app)  # /metrics endpoint
+
 
 # ----------------------------
 # Middleware to log all requests
@@ -81,15 +90,14 @@ async def log_requests(request: Request, call_next):
     logging.info(json.dumps(log_entry))
     return response
 
+
 # ----------------------------
 # Home page - form
 # ----------------------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "features": FEATURES}
-    )
+    return templates.TemplateResponse("index.html", {"request": request, "features": FEATURES})
+
 
 # ----------------------------
 # Prediction endpoint
@@ -125,6 +133,7 @@ async def predict_form(request: Request):
         },
     )
 
+
 # ----------------------------
 # Logs page
 # ----------------------------
@@ -136,14 +145,18 @@ def view_logs(request: Request):
             for line in deque(f, maxlen=50):
                 try:
                     log_entry = json.loads(line)
-                    logs_data.append({
-                        "method": log_entry.get("method"),
-                        "url": log_entry.get("url"),
-                        "status_code": log_entry.get("status_code"),
-                        "process_time": round(log_entry.get("process_time", 0), 3),
-                        "prediction": log_entry.get("prediction", "-"),
-                        "confidence": round(float(log_entry.get("confidence", 0)), 2) if "confidence" in log_entry else "-",
-                    })
+                    logs_data.append(
+                        {
+                            "method": log_entry.get("method"),
+                            "url": log_entry.get("url"),
+                            "status_code": log_entry.get("status_code"),
+                            "process_time": round(log_entry.get("process_time", 0), 3),
+                            "prediction": log_entry.get("prediction", "-"),
+                            "confidence": (
+                                round(float(log_entry.get("confidence", 0)), 2) if "confidence" in log_entry else "-"
+                            ),
+                        }
+                    )
                 except (json.JSONDecodeError, ValueError):
                     continue
 
