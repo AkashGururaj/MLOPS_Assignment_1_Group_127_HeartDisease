@@ -6,9 +6,7 @@ __pycache__/
 mlruns/
 mlflow.db
 
-# Model artifacts & outputs
-outputs/
-src/outputs/
+
 
 # OS
 .DS_Store
