@@ -106,12 +106,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # --------------------------
-      # 12. Tag and push Docker image
+      # 12. Tag and push Docker image (dynamic lowercase)
       # --------------------------
       - name: Tag and push Docker image
         run: |
-          docker tag heart-disease-api:latest ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
-          docker push ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
+          DOCKER_REPO="ghcr.io/${{ github.repository_owner && github.repository_owner.toLowerCase() }}/heart-disease-api:latest"
+          echo "Docker repo: $DOCKER_REPO"
+          docker tag heart-disease-api:latest $DOCKER_REPO
+          docker push $DOCKER_REPO
 
       # --------------------------
       # 13. Deploy to Kubernetes
