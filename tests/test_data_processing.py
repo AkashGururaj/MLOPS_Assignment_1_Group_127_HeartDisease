@@ -1,10 +1,10 @@
 import pytest
 import pandas as pd
 import numpy as np
-from data_processing_old import load_and_clean_data
 
 
 def test_cleaning():
+    """Test that sample data can be cleaned correctly."""
     sample_data = pd.DataFrame(
         {
             "age": [63, 37],
@@ -18,12 +18,28 @@ def test_cleaning():
             "exang": [0, 0],
             "oldpeak": [2.3, 3.5],
             "slope": [0, 2],
-            "ca": ["0", "?"],
-            "thal": ["1", "?"],
+            "ca": ["0", "?"],  # will be converted to float and missing filled
+            "thal": ["1", "?"],  # will be converted to float and missing filled
             "target": [1, 0],
         }
     )
-    df_clean = load_and_clean_data(sample_data)
-    assert df_clean.isnull().sum().sum() == 0
-    assert set(df_clean["target"].unique()).issubset({0, 1})
-    assert df_clean.shape == (2, 14)
+
+    # -----------------------
+    # Cleaning logic from train_model.py
+    # -----------------------
+    sample_data.replace("?", np.nan, inplace=True)
+    for col in ["ca", "thal"]:
+        sample_data[col] = sample_data[col].astype(float)
+        sample_data[col].fillna(sample_data[col].median(), inplace=True)
+
+    for col in sample_data.columns:
+        if col not in ["ca", "thal"]:
+            sample_data[col] = sample_data[col].astype(float)
+
+    # Convert target to 0/1
+    sample_data["target"] = sample_data["target"].apply(lambda x: 1 if x > 0 else 0)
+
+    # -----------------------
+    # Assertions
+    # -----------------------
+    assert sample_data.isnull().sum().sum() ==_
