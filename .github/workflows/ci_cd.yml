@@ -33,28 +33,35 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest flake8 mlflow fastapi uvicorn docker kubernetes
+          pip install pytest flake8 mlflow fastapi uvicorn docker kubernetes black
 
       # --------------------------
-      # 4. Lint code
+      # 4. Format code with Black
+      # --------------------------
+      - name: Format code with Black
+        run: |
+          black src/ tests/
+
+      # --------------------------
+      # 5. Lint code
       # --------------------------
       - name: Lint code
         run: flake8 src/ tests/
 
       # --------------------------
-      # 5. Run unit tests
+      # 6. Run unit tests
       # --------------------------
       - name: Run unit tests
         run: pytest tests/ --maxfail=1 --disable-warnings -q
 
       # --------------------------
-      # 6. Train final model
+      # 7. Train final model
       # --------------------------
       - name: Train model with MLflow
         run: python src/train_model.py
 
       # --------------------------
-      # 7. Upload workflow artifacts
+      # 8. Upload workflow artifacts
       # --------------------------
       - name: Upload model artifacts
         uses: actions/upload-artifact@v4.0.0
@@ -63,7 +70,7 @@ jobs:
           path: outputs/
 
       # --------------------------
-      # 8. Commit & push trained model
+      # 9. Commit & push trained model
       # --------------------------
       - name: Commit and push trained model
         run: |
@@ -75,13 +82,13 @@ jobs:
         continue-on-error: true
 
       # --------------------------
-      # 9. Build Docker image
+      # 10. Build Docker image
       # --------------------------
       - name: Build Docker image
         run: docker build -t heart-disease-api:latest .
 
       # --------------------------
-      # 10. Log in to GitHub Container Registry
+      # 11. Log in to GitHub Container Registry
       # --------------------------
       - name: Log in to GHCR
         uses: docker/login-action@v2
@@ -91,7 +98,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # --------------------------
-      # 11. Tag and push Docker image
+      # 12. Tag and push Docker image
       # --------------------------
       - name: Tag and push Docker image
         run: |
@@ -99,7 +106,7 @@ jobs:
           docker push ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
 
       # --------------------------
-      # 12. Deploy to Kubernetes
+      # 13. Deploy to Kubernetes
       # --------------------------
       - name: Deploy to Kubernetes
         run: |
@@ -109,7 +116,7 @@ jobs:
         continue-on-error: true
 
       # --------------------------
-      # 13. Verify deployment
+      # 14. Verify deployment
       # --------------------------
       - name: Verify pods
         run: kubectl get pods || echo "Kubernetes verification skipped"
