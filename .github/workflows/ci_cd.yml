@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # required to push commits from workflow
+  contents: write  # needed to push commits from workflow
 
 jobs:
   build-test-train-deploy:
@@ -16,7 +16,7 @@ jobs:
 
     steps:
       # --------------------------
-      # 1. Checkout code
+      # 1. Checkout repository
       # --------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -36,7 +36,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest flake8 mlflow fastapi uvicorn docker kubernetes black
+          pip install pytest flake8 mlflow fastapi uvicorn docker black
 
       # --------------------------
       # 4. Format code with Black & push using PAT
@@ -72,7 +72,7 @@ jobs:
       # 8. Upload workflow artifacts
       # --------------------------
       - name: Upload model artifacts
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: model-artifacts
           path: outputs/
@@ -96,7 +96,7 @@ jobs:
         run: docker build -t heart-disease-api:latest .
 
       # --------------------------
-      # 11. Log in to GHCR with PAT
+      # 11. Log in to GitHub Container Registry using PAT
       # --------------------------
       - name: Log in to GHCR
         uses: docker/login-action@v2
