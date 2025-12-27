@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write  # needed for workflow-triggered commits
+
 jobs:
   build-test-train-deploy:
     runs-on: ubuntu-latest
@@ -36,7 +39,7 @@ jobs:
           pip install pytest flake8 mlflow fastapi uvicorn docker kubernetes black
 
       # --------------------------
-      # 4. Format code with Black & push
+      # 4. Format code with Black & push using PAT
       # --------------------------
       - name: Format code with Black
         run: |
@@ -45,7 +48,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git add src/ tests/
           git commit -m "Auto-format code with Black" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       # --------------------------
       # 5. Lint code
@@ -83,7 +86,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git add outputs/
           git commit -m "Add latest trained model [CI/CD]" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} HEAD:main
         continue-on-error: true
 
       # --------------------------
