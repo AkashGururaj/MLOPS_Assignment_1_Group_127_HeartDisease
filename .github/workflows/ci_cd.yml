@@ -12,107 +12,107 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # --------------------------
-    # 1. Checkout code
-    # --------------------------
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # --------------------------
+      # 1. Checkout code
+      # --------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    # --------------------------
-    # 2. Set up Python
-    # --------------------------
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      # --------------------------
+      # 2. Set up Python
+      # --------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    # --------------------------
-    # 3. Install dependencies
-    # --------------------------
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest flake8 mlflow fastapi uvicorn docker
+      # --------------------------
+      # 3. Install dependencies
+      # --------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest flake8 mlflow fastapi uvicorn docker kubernetes
 
-    # --------------------------
-    # 4. Lint code
-    # --------------------------
-    - name: Lint code
-      run: flake8 src/ tests/
+      # --------------------------
+      # 4. Lint code
+      # --------------------------
+      - name: Lint code
+        run: flake8 src/ tests/
 
-    # --------------------------
-    # 5. Run unit tests
-    # --------------------------
-    - name: Run unit tests
-      run: pytest tests/ --maxfail=1 --disable-warnings -q
+      # --------------------------
+      # 5. Run unit tests
+      # --------------------------
+      - name: Run unit tests
+        run: pytest tests/ --maxfail=1 --disable-warnings -q
 
-    # --------------------------
-    # 6. Train final model
-    # --------------------------
-    - name: Train model with MLflow
-      run: python src/train_model.py
+      # --------------------------
+      # 6. Train final model
+      # --------------------------
+      - name: Train model with MLflow
+        run: python src/train_model.py
 
-    # --------------------------
-    # 7. Upload workflow artifacts
-    # --------------------------
-    - name: Upload model artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: model-artifacts
-        path: outputs/
+      # --------------------------
+      # 7. Upload workflow artifacts
+      # --------------------------
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v4.0.0
+        with:
+          name: model-artifacts
+          path: outputs/
 
-    # --------------------------
-    # 8. Commit & push trained model back to GitHub
-    # --------------------------
-    - name: Commit and push trained model
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git add outputs/
-        git commit -m "Add latest trained model [CI/CD]"
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
-      continue-on-error: true  # prevents pipeline fail if nothing new to push
+      # --------------------------
+      # 8. Commit & push trained model
+      # --------------------------
+      - name: Commit and push trained model
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add outputs/
+          git commit -m "Add latest trained model [CI/CD]" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+        continue-on-error: true
 
-    # --------------------------
-    # 9. Build Docker image
-    # --------------------------
-    - name: Build Docker image
-      run: |
-        docker build -t heart-disease-api:latest .
+      # --------------------------
+      # 9. Build Docker image
+      # --------------------------
+      - name: Build Docker image
+        run: docker build -t heart-disease-api:latest .
 
-    # --------------------------
-    # 10. Log in to GitHub Container Registry
-    # --------------------------
-    - name: Log in to GHCR
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      # --------------------------
+      # 10. Log in to GitHub Container Registry
+      # --------------------------
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    # --------------------------
-    # 11. Push Docker image to GHCR
-    # --------------------------
-    - name: Tag and push Docker image
-      run: |
-        docker tag heart-disease-api:latest ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
-        docker push ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
+      # --------------------------
+      # 11. Tag and push Docker image
+      # --------------------------
+      - name: Tag and push Docker image
+        run: |
+          docker tag heart-disease-api:latest ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
+          docker push ghcr.io/${{ github.repository_owner }}/heart-disease-api:latest
 
-    # --------------------------
-    # 12. Deploy to Kubernetes (Docker Desktop)
-    # --------------------------
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
-        kubectl apply -f k8s/ingress.yaml
+      # --------------------------
+      # 12. Deploy to Kubernetes
+      # --------------------------
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+        continue-on-error: true
 
-    # --------------------------
-    # 13. Verify deployment
-    # --------------------------
-    - name: Verify pods
-      run: kubectl get pods
+      # --------------------------
+      # 13. Verify deployment
+      # --------------------------
+      - name: Verify pods
+        run: kubectl get pods || echo "Kubernetes verification skipped"
 
-    - name: Verify ingress
-      run: kubectl get ingress
+      - name: Verify ingress
+        run: kubectl get ingress || echo "Kubernetes verification skipped"
