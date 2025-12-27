@@ -18,9 +18,12 @@ import mlflow
 import mlflow.sklearn
 
 # -----------------------
-# Setup
+# Setup output directory (project root)
 # -----------------------
-os.makedirs("outputs", exist_ok=True)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # repo root
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # -----------------------
@@ -28,20 +31,8 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 # -----------------------
 url = "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data"
 columns = [
-    "age",
-    "sex",
-    "cp",
-    "trestbps",
-    "chol",
-    "fbs",
-    "restecg",
-    "thalach",
-    "exang",
-    "oldpeak",
-    "slope",
-    "ca",
-    "thal",
-    "target",
+    "age","sex","cp","trestbps","chol","fbs","restecg",
+    "thalach","exang","oldpeak","slope","ca","thal","target"
 ]
 df = pd.read_csv(url, header=None, names=columns)
 
@@ -62,18 +53,18 @@ df["target"] = df["target"].apply(lambda x: 1 if x > 0 else 0)
 # -----------------------
 plt.figure(figsize=(8, 6))
 sns.countplot(x="target", data=df)
-plt.savefig(f"outputs/class_balance_{timestamp}.png")
+plt.savefig(os.path.join(OUTPUT_DIR, f"class_balance_{timestamp}.png"))
 plt.close()
 
 plt.figure(figsize=(12, 10))
 sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap="coolwarm")
-plt.savefig(f"outputs/corr_heatmap_{timestamp}.png")
+plt.savefig(os.path.join(OUTPUT_DIR, f"corr_heatmap_{timestamp}.png"))
 plt.close()
 
 for col in df.columns[:-1]:
     plt.figure()
     sns.histplot(df[col], kde=True)
-    plt.savefig(f"outputs/hist_{col}_{timestamp}.png")
+    plt.savefig(os.path.join(OUTPUT_DIR, f"hist_{col}_{timestamp}.png"))
     plt.close()
 
 # -----------------------
@@ -81,7 +72,9 @@ for col in df.columns[:-1]:
 # -----------------------
 X = df.drop("target", axis=1)
 y = df["target"]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
 # -----------------------
 # Feature engineering
@@ -109,7 +102,7 @@ models = {
 results = {}
 
 for name, clf in models.items():
-    pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("classifier", clf)])
+    pipeline = Pipeline([("preprocessor", preprocessor), ("classifier", clf)])
     pipeline.fit(X_train, y_train)
 
     y_pred = pipeline.predict(X_test)
@@ -125,11 +118,11 @@ for name, clf in models.items():
     # Log to MLflow
     with mlflow.start_run(run_name=name):
         mlflow.log_params(clf.get_params())
-        mlflow.log_metrics({"Accuracy": acc, "Precision": prec, "Recall": rec, "ROC-AUC": roc})
+        mlflow.log_metrics(results[name])
         mlflow.sklearn.log_model(pipeline, f"{name}_model")
 
 # -----------------------
-# Create performance chart
+# Performance chart
 # -----------------------
 metrics = ["Accuracy", "Precision", "Recall", "ROC-AUC"]
 model_names = list(models.keys())
@@ -140,59 +133,50 @@ width = 0.2
 
 for i, metric in enumerate(metrics):
     values = [results[m][metric] for m in model_names]
-    bars = ax.bar(x + i * width, values, width=width, label=metric)
-
-    # Annotate values on top
+    bars = ax.bar(x + i*width, values, width=width, label=metric)
     for bar in bars:
         height = bar.get_height()
-        ax.annotate(
-            f"{height:.2f}",
-            xy=(bar.get_x() + bar.get_width() / 2, height),
-            xytext=(0, 3),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-        )
+        ax.annotate(f"{height:.2f}",
+                    xy=(bar.get_x() + bar.get_width()/2, height),
+                    xytext=(0,3),
+                    textcoords="offset points",
+                    ha="center", va="bottom", fontsize=9)
 
-ax.set_xticks(x + width * 1.5)
+ax.set_xticks(x + width*1.5)
 ax.set_xticklabels(model_names)
-ax.set_ylim(0, 1.1)
+ax.set_ylim(0,1.1)
 ax.set_ylabel("Score")
 ax.set_title("Model Performance Metrics on Test Set")
 ax.legend()
 plt.tight_layout()
 
-results_img_path = f"outputs/model_performance_{timestamp}.png"
+results_img_path = os.path.join(OUTPUT_DIR, f"model_performance_{timestamp}.png")
 plt.savefig(results_img_path)
 plt.close()
 
 # -----------------------
-# Save the best model
+# Save best model
 # -----------------------
-# Choose best model by Accuracy
 best_model_name = max(results, key=lambda k: results[k]["Accuracy"])
-best_model_pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("classifier", models[best_model_name])])
+best_model_pipeline = Pipeline([("preprocessor", preprocessor), ("classifier", models[best_model_name])])
 best_model_pipeline.fit(X_train, y_train)
 
-pickle_path = f"outputs/final_model_{timestamp}.pkl"
-with open(pickle_path, "wb") as f:
+with open(os.path.join(OUTPUT_DIR, f"final_model_{timestamp}.pkl"), "wb") as f:
     pickle.dump(best_model_pipeline, f)
 
-preproc_path = f"outputs/preprocessing_pipeline_{timestamp}.pkl"
-with open(preproc_path, "wb") as f:
+with open(os.path.join(OUTPUT_DIR, f"preprocessing_pipeline_{timestamp}.pkl"), "wb") as f:
     pickle.dump(best_model_pipeline.named_steps["preprocessor"], f)
 
 # -----------------------
 # Save requirements
 # -----------------------
 requirements = "numpy\npandas\nscikit-learn\nmatplotlib\nseaborn\nmlflow\npytest\nflake8"
-with open("outputs/requirements.txt", "w") as f:
+with open(os.path.join(OUTPUT_DIR, "requirements.txt"), "w") as f:
     f.write(requirements)
 
 # -----------------------
 # Done
 # -----------------------
-print(f"Training Complete. Outputs saved with timestamp: {timestamp}")
+print(f"Training Complete. Outputs saved in {OUTPUT_DIR}")
 print(f"Best Model Saved: {best_model_name}")
-print(f"performance Chart Saved at: {results_img_path}")
+print(f"Performance chart saved at: {results_img_path}")
