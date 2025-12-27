@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Model artifacts & outputs
+outputs/
+src/outputs/
+
+# OS
+.DS_Store
+Thumbs.db

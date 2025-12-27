@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Heart Disease Prediction</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        label { display: inline-block; width: 220px; }
+        input { margin-bottom: 10px; padding: 5px; width: 200px; }
+        button { padding: 8px 16px; margin-top: 10px; }
+        .result { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9; width: fit-content; }
+        .result h3 { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h2>Heart Disease Prediction</h2>
+    <form action="/predict_form" method="post">
+        {% for feature in features %}
+            <label>{{ feature }}: </label>
+            <input type="text" 
+                   name="{{ feature }}" 
+                   required
+                   title="{% if feature == 'age' %}Enter age in years (e.g., 45){% elif feature == 'sex' %}1=Male, 0=Female{% elif feature == 'cp' %}Chest pain type: 0–3{% elif feature == 'trestbps' %}Resting blood pressure (mm Hg){% elif feature == 'chol' %}Serum cholesterol (mg/dl){% elif feature == 'fbs' %}Fasting blood sugar >120 mg/dl: 1=yes, 0=no{% elif feature == 'restecg' %}Resting ECG results: 0–2{% elif feature == 'thalach' %}Maximum heart rate achieved{% elif feature == 'exang' %}Exercise induced angina: 1=yes, 0=no{% elif feature == 'oldpeak' %}ST depression induced by exercise (float){% elif feature == 'slope' %}Slope of ST segment: 0–2{% elif feature == 'ca' %}Number of major vessels colored: 0–3{% elif feature == 'thal' %}Thalassemia: 1=Normal, 2=Fixed defect, 3=Reversible defect{% endif %}"
+                   placeholder="{% if feature == 'age' %}45{% elif feature == 'sex' %}1{% elif feature == 'cp' %}1{% elif feature == 'trestbps' %}120{% elif feature == 'chol' %}230{% elif feature == 'fbs' %}0{% elif feature == 'restecg' %}1{% elif feature == 'thalach' %}150{% elif feature == 'exang' %}0{% elif feature == 'oldpeak' %}1.0{% elif feature == 'slope' %}1{% elif feature == 'ca' %}0{% elif feature == 'thal' %}2{% endif %}">
+            <br>
+        {% endfor %}
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if result is defined %}
+        <div class="result">
+            <h3>Prediction: {{ result.prediction }}</h3>
+            <h3>Confidence: {{ (result.confidence | float * 100) | round(2) }}%</h3>
+        </div>
+    {% endif %}
+</body>
+</html>

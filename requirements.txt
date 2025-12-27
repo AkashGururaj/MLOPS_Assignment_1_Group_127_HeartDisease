@@ -1,0 +1,29 @@
+# Core ML
+pandas
+numpy
+scikit-learn
+
+# Model tracking
+mlflow
+
+# API
+fastapi
+uvicorn
+pydantic
+jinja2
+python-multipart
+
+
+
+# Monitoring
+prometheus-fastapi-instrumentator
+
+# Optional visualization / plotting
+matplotlib
+seaborn
+
+# Testing / Linting
+pytest
+flake8
+
+
