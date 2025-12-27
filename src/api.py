@@ -25,15 +25,17 @@ templates = Jinja2Templates(directory="src/templates")
 # ----------------------------
 os.makedirs("src/outputs", exist_ok=True)
 logging.basicConfig(
-    filename="src/outputs/api_requests.log",
-    level=logging.INFO,
-    format="%(message)s"
+    filename="src/outputs/api_requests.log", level=logging.INFO, format="%(message)s"
 )
 
 # ----------------------------
 # Load latest trained model
 # ----------------------------
-model_files = [f for f in os.listdir("src/outputs") if f.startswith("final_model_") and f.endswith(".pkl")]
+model_files = [
+    f
+    for f in os.listdir("src/outputs")
+    if f.startswith("final_model_") and f.endswith(".pkl")
+]
 if not model_files:
     raise FileNotFoundError("No trained model found in src/outputs folder.")
 latest_model_file = sorted(model_files)[-1]
@@ -45,18 +47,29 @@ with open(f"src/outputs/{latest_model_file}", "rb") as f:
 # Features
 # ----------------------------
 FEATURES = [
-    "age","sex","cp","trestbps","chol","fbs","restecg",
-    "thalach","exang","oldpeak","slope","ca","thal"
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
 ]
 
 # ----------------------------
 # Prometheus metrics
 # ----------------------------
 instrumentator = Instrumentator(
-    should_group_status_codes=False,
-    should_ignore_untemplated=True
+    should_group_status_codes=False, should_ignore_untemplated=True
 )
 instrumentator.instrument(app).expose(app)  # /metrics endpoint
+
 
 # ----------------------------
 # Middleware to log all requests
@@ -72,18 +85,22 @@ async def log_requests(request: Request, call_next):
         "method": request.method,
         "url": str(request.url),
         "status_code": response.status_code,
-        "process_time": process_time
+        "process_time": process_time,
     }
 
     logging.info(json.dumps(log_entry))
     return response
+
 
 # ----------------------------
 # Home page - form
 # ----------------------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "features": FEATURES})
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "features": FEATURES}
+    )
+
 
 # ----------------------------
 # Prediction endpoint
@@ -91,7 +108,9 @@ def home(request: Request):
 @app.post("/predict_form", response_class=HTMLResponse)
 async def predict_form(request: Request):
     form_data = await request.form()
-    input_data = {key: float(value) for key, value in form_data.items() if key in FEATURES}
+    input_data = {
+        key: float(value) for key, value in form_data.items() if key in FEATURES
+    }
 
     df = pd.DataFrame([input_data])
     pred_class = int(model.predict(df)[0])
@@ -106,7 +125,7 @@ async def predict_form(request: Request):
         "process_time": 0,
         "input": input_data,
         "prediction": pred_label,
-        "confidence": pred_proba
+        "confidence": pred_proba,
     }
     logging.info(json.dumps(log_entry))
 
@@ -115,12 +134,10 @@ async def predict_form(request: Request):
         {
             "request": request,
             "features": FEATURES,
-            "result": {
-                "prediction": pred_label,
-                "confidence": round(pred_proba, 2)
-            }
-        }
+            "result": {"prediction": pred_label, "confidence": round(pred_proba, 2)},
+        },
     )
+
 
 # ----------------------------
 # Logs page
@@ -135,15 +152,32 @@ def view_logs(request: Request):
             for line in deque(f, maxlen=50):
                 try:
                     log_entry = json.loads(line)
-                    logs_data.append({
-                        "method": log_entry.get("method"),
-                        "url": log_entry.get("url"),
-                        "status_code": log_entry.get("status_code"),
-                        "process_time": round(log_entry.get("process_time", 0), 3) if isinstance(log_entry.get("process_time", 0), (int, float)) else "-",
-                        "prediction": log_entry.get("prediction", "-"),
-                        "confidence": round(float(log_entry["confidence"]), 2) if "confidence" in log_entry and isinstance(log_entry["confidence"], (int, float, str)) else "-"
-                    })
+                    logs_data.append(
+                        {
+                            "method": log_entry.get("method"),
+                            "url": log_entry.get("url"),
+                            "status_code": log_entry.get("status_code"),
+                            "process_time": (
+                                round(log_entry.get("process_time", 0), 3)
+                                if isinstance(
+                                    log_entry.get("process_time", 0), (int, float)
+                                )
+                                else "-"
+                            ),
+                            "prediction": log_entry.get("prediction", "-"),
+                            "confidence": (
+                                round(float(log_entry["confidence"]), 2)
+                                if "confidence" in log_entry
+                                and isinstance(
+                                    log_entry["confidence"], (int, float, str)
+                                )
+                                else "-"
+                            ),
+                        }
+                    )
                 except (json.JSONDecodeError, ValueError):
                     continue
 
-    return templates.TemplateResponse("logs.html", {"request": request, "logs": logs_data})
+    return templates.TemplateResponse(
+        "logs.html", {"request": request, "logs": logs_data}
+    )
