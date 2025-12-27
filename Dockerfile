@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ----------------------------
 # Copy and install Python dependencies
 # ----------------------------
-COPY requirements.txt .
+COPY requirements.txt . 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -34,9 +34,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ src/
 
 # ----------------------------
-# Create outputs and logs directories
+# Copy trained models and outputs
 # ----------------------------
-RUN mkdir -p /app/outputs /app/logs
+COPY outputs/ /app/outputs/
+
+# ----------------------------
+# Create logs directory
+# ----------------------------
+RUN mkdir -p /app/logs
 
 # ----------------------------
 # Set environment variable
