@@ -245,6 +245,12 @@ seaborn
 mlflow
 pytest
 flake8
+prometheus-fastapi-instrumentator
+fastapi
+uvicorn
+pydantic
+jinja2
+python-multipart
 """
 
 with open(os.path.join(OUTPUT_DIR, "requirements.txt"), "w") as f:
