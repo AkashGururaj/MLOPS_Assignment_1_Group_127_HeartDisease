@@ -6,3 +6,9 @@ seaborn
 mlflow
 pytest
 flake8
+prometheus-fastapi-instrumentator
+fastapi
+uvicorn
+pydantic
+jinja2
+python-multipart
