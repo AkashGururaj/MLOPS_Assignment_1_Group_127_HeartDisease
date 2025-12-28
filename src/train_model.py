@@ -1,4 +1,3 @@
-
 # Imports
 import os
 import pickle
@@ -26,7 +25,6 @@ import mlflow
 import mlflow.sklearn
 
 
-
 # Setup output directory
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -36,18 +34,28 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-
 # Load dataset
 
 url = "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data"
 
 columns = [
-    "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
-    "thalach", "exang", "oldpeak", "slope", "ca", "thal", "target"
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
+    "target",
 ]
 
 df = pd.read_csv(url, header=None, names=columns)
-
 
 
 # Clean dataset
@@ -65,14 +73,10 @@ for col in df.columns:
 df["target"] = df["target"].apply(lambda x: 1 if x > 0 else 0)
 
 
-
 # Save cleaned dataset
 
-cleaned_data_path = os.path.join(
-    OUTPUT_DIR, f"cleaned_heart_disease_{timestamp}.csv"
-)
+cleaned_data_path = os.path.join(OUTPUT_DIR, f"cleaned_heart_disease_{timestamp}.csv")
 df.to_csv(cleaned_data_path, index=False)
-
 
 
 # EDA
@@ -97,7 +101,6 @@ for col in df.columns[:-1]:
     plt.close()
 
 
-
 # Train-test split
 
 X = df.drop("target", axis=1)
@@ -112,7 +115,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
-
 # Feature engineering
 
 num_features = ["age", "trestbps", "chol", "thalach", "oldpeak"]
@@ -124,7 +126,6 @@ preprocessor = ColumnTransformer(
         ("cat", OneHotEncoder(handle_unknown="ignore"), cat_features),
     ]
 )
-
 
 
 # MLflow setup
@@ -141,7 +142,6 @@ models = {
 }
 
 results = {}
-
 
 
 # Train & log models
@@ -177,7 +177,6 @@ for name, clf in models.items():
         mlflow.sklearn.log_model(pipeline, artifact_path="model")
 
 
-
 # Performance comparison plot
 
 metrics = ["Accuracy", "Precision", "Recall", "ROC-AUC"]
@@ -211,12 +210,9 @@ ax.set_title("Model Performance Metrics")
 ax.legend()
 
 plt.tight_layout()
-results_img_path = os.path.join(
-    OUTPUT_DIR, f"model_performance_{timestamp}.png"
-)
+results_img_path = os.path.join(OUTPUT_DIR, f"model_performance_{timestamp}.png")
 plt.savefig(results_img_path)
 plt.close()
-
 
 
 # Save best model
@@ -232,16 +228,11 @@ best_pipeline = Pipeline(
 
 best_pipeline.fit(X_train, y_train)
 
-with open(
-    os.path.join(OUTPUT_DIR, f"final_model_{timestamp}.pkl"), "wb"
-) as f:
+with open(os.path.join(OUTPUT_DIR, f"final_model_{timestamp}.pkl"), "wb") as f:
     pickle.dump(best_pipeline, f)
 
-with open(
-    os.path.join(OUTPUT_DIR, f"preprocessing_pipeline_{timestamp}.pkl"), "wb"
-) as f:
+with open(os.path.join(OUTPUT_DIR, f"preprocessing_pipeline_{timestamp}.pkl"), "wb") as f:
     pickle.dump(best_pipeline.named_steps["preprocessor"], f)
-
 
 
 # Save requirements
